@@ -1,23 +1,21 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // --- DATA --- (Same: workers, jobTypes)
+    // --- DATA ---
     const workers = [ 
-        { id: 1, name: "Expert Worker 1", color: "#a9d0f5" }, 
-        { id: 2, name: "Expert Worker 2", color: "#7fcdbb" }, 
-        { id: 6, name: "Expert Worker 3", color: "#b3e5fc" }, 
-        { id: 3, name: "General Worker 1", color: "#f7dc6f" }, 
-        { id: 4, name: "General Worker 2", color: "#f1948a" }, 
-        { id: 5, name: "General Worker 3", color: "#c39bd3" }  
-    ];
-    const jobTypes = [ 
-        { name: "AgroHS", outlineColor: "#008000", glowColor: "rgba(0, 128, 0, 0.7)" },
-        { name: "ChassisPro", outlineColor: "#000000", glowColor: "rgba(50, 50, 50, 0.7)" },    
-        { name: "Others", outlineColor: "#FF0000", glowColor: "rgba(255, 0, 0, 0.7)" }       
+        { id: 1, name: "Expert Worker 1", color: "#a0c4ff" }, // Pale Blue
+        { id: 2, name: "Expert Worker 2", color: "#a7d8de" }, // Pale Cyan/Teal
+        { id: 6, name: "Expert Worker 3", color: "#b0efd1" }, // Pale Green
+        { id: 3, name: "General Worker 1", color: "#ffdcb3" }, // Pale Orange/Peach
+        { id: 4, name: "General Worker 2", color: "#d8b2ff" }, // Pale Lavender
+        { id: 5, name: "General Worker 3", color: "#ffb3c8" }  // Pale Pink
     ];
 
-    // --- ROBUST DATA LOADING --- (Same)
-    function parseTaskDates(task) { /* ... */ }
-    function parseLeaveDates(leave) { /* ... */ }
-    // Actual implementations
+    const jobTypes = [ 
+        { name: "AgroHS", outlineColor: "#28a745", glowColor: "rgba(40, 167, 69, 0.5)" },   // Success Green
+        { name: "ChassisPro", outlineColor: "#343a40", glowColor: "rgba(52, 58, 64, 0.5)" }, // Dark Grey
+        { name: "Others", outlineColor: "#dc3545", glowColor: "rgba(220, 53, 69, 0.5)" }    // Danger Red
+    ];
+
+    // --- ROBUST DATA LOADING ---
     function parseTaskDates(task) {
         try {
             if (!task || typeof task.startDate === 'undefined' || typeof task.endDate === 'undefined') { return null; }
@@ -47,8 +45,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const diffToMondayInitial = dayOfWeekInitial === 0 ? -6 : 1 - dayOfWeekInitial;
     currentDisplayDate.setDate(currentDisplayDate.getDate() + diffToMondayInitial);
 
-    // --- DOM ELEMENTS --- (Same)
-    // ... (all DOM elements as before) ...
+    // --- DOM ELEMENTS ---
+    const ganttChartContainer = document.querySelector('.gantt-chart-container');
     const workerSelect = document.getElementById('workerSelect');
     const editWorkerSelect = document.getElementById('editWorkerSelect');
     const addJobForm = document.getElementById('addJobForm');
@@ -84,8 +82,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const editLeaveReasonInput = document.getElementById('editLeaveReason');
     const deleteLeaveButton = document.getElementById('deleteLeaveButton');
 
-
-    // --- DRAG AND DROP STATE VARIABLES --- (Same)
+    // --- DRAG AND DROP STATE VARIABLES --- 
     let dragMode = null; 
     let draggedTaskElement = null;
     let draggedTaskId = null;
@@ -95,15 +92,10 @@ document.addEventListener('DOMContentLoaded', () => {
     let originalTaskStartDate = null;
     let originalTaskDuration = 0;
     let isActualDrag = false; 
-    const cellWidth = 50; 
     const resizeHandleActiveZone = 10; 
+    let currentCellWidth = 50; // Default/fallback, updated in renderGanttChart
 
-    // --- DATE HELPER FUNCTIONS --- (Same)
-    function getDaysInMonth(year, month) { /* ... */ }
-    function formatDate(dateObj, includeYear = true) { /* ... */ }
-    function addDays(dateObj, days) { /* ... */ }
-    // Actual implementations
-    function getDaysInMonth(year, month) { return new Date(year, month + 1, 0).getDate(); }
+    // --- DATE HELPER FUNCTIONS ---
     function formatDate(dateObj, includeYear = true) { 
         const d = new Date(dateObj);
         let monthVal = '' + (d.getMonth() + 1);
@@ -121,10 +113,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return result;
     }
 
-    // --- GENERIC LOCAL STORAGE FUNCTIONS --- (Same)
-    function saveData(key, data) { /* ... */ }
-    function loadData(key, dateParserFn) { /* ... */ }
-    // Actual implementations
+    // --- GENERIC LOCAL STORAGE FUNCTIONS ---
     function saveData(key, data) { localStorage.setItem(key, JSON.stringify(data));}
     function loadData(key, dateParserFn) {
         const storedData = localStorage.getItem(key);
@@ -138,16 +127,12 @@ document.addEventListener('DOMContentLoaded', () => {
         return [];
     }
     
-    // --- MODAL CONTROL FUNCTIONS --- (Same logic, openEditModal slightly more robust)
+    // --- MODAL CONTROL FUNCTIONS ---
     function closeModal() { editTaskModal.style.display = 'none'; }
     function openEditModal(taskId) {
-        if (isActualDrag || dragMode) { // If a drag just happened or is in progress
-            isActualDrag = false; // Reset for next interaction
-            return; 
-        }
+        if (isActualDrag || dragMode) { isActualDrag = false; return; }
         const task = tasks.find(t => t.id === taskId);
         if (!task) return;
-        // ... (rest of openEditModal same as before)
         editTaskIdInput.value = task.id;
         editJobNameInput.value = task.name;
         editWorkerSelect.value = task.workerId;
@@ -157,9 +142,7 @@ document.addEventListener('DOMContentLoaded', () => {
         editTaskModal.style.display = 'block';
     }
     function closeLeaveModal() { editLeaveModal.style.display = 'none'; }
-    function openEditLeaveModal(leaveId) { /* ... same ... */ }
-    // Actual implementation
-     function openEditLeaveModal(leaveId) {
+    function openEditLeaveModal(leaveId) {
         const leave = leaves.find(l => l.id === leaveId);
         if (!leave) return;
         const worker = workers.find(w => w.id === leave.workerId);
@@ -171,10 +154,7 @@ document.addEventListener('DOMContentLoaded', () => {
         editLeaveModal.style.display = 'block';
     }
 
-    // --- POPULATION FUNCTIONS --- (Same)
-    function populateWorkerSelects() { /* ... */ }
-    function populateJobTypeSelects() { /* ... */ }
-    // Actual implementations
+    // --- POPULATION FUNCTIONS ---
     function populateWorkerSelects() {
         workerSelect.innerHTML = ''; 
         editWorkerSelect.innerHTML = '';
@@ -202,23 +182,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- NEW: Pointer Coordinate Helper ---
     function getPointerCoordinates(event) {
-        if (event.touches && event.touches.length > 0) {
-            return { x: event.touches[0].clientX, y: event.touches[0].clientY, type: 'touch' };
+        if (event.type.startsWith('touch')) {
+            return { x: event.touches[0].clientX, y: event.touches[0].clientY };
         } else {
-            return { x: event.clientX, y: event.clientY, type: 'mouse' };
+            return { x: event.clientX, y: event.clientY };
         }
     }
 
     // --- RENDERING FUNCTIONS ---
-    function renderBarOnChart(item, cellsDiv, periodStartDate, daysInPeriod, currentCellWidth, type) {
-        // ... (Date calculation logic same as before) ...
+    function renderBarOnChart(item, cellsDiv, periodStartDate, daysInPeriod, cellWidthForCalc, type) {
         const itemStartDate = new Date(item.startDate); 
         itemStartDate.setHours(0,0,0,0); 
         const itemEndDate = new Date(item.endDate);   
         itemEndDate.setHours(23,59,59,999); 
         const periodViewEndDate = addDays(new Date(periodStartDate), daysInPeriod - 1);
         periodViewEndDate.setHours(23,59,59,999); 
+
         if (itemEndDate < periodStartDate || itemStartDate > periodViewEndDate) { return; }
+
         let renderStartIndexInPeriod = 0;
         if (itemStartDate > periodStartDate) {
             const diffTime = itemStartDate.getTime() - periodStartDate.getTime(); 
@@ -230,24 +211,23 @@ document.addEventListener('DOMContentLoaded', () => {
             renderEndIndexInPeriod = Math.round(diffTime / (1000 * 60 * 60 * 24));
         }
         renderEndIndexInPeriod = Math.min(renderEndIndexInPeriod, daysInPeriod - 1);
+        
         const offsetDays = renderStartIndexInPeriod;
         const durationInView = renderEndIndexInPeriod - renderStartIndexInPeriod + 1;
-        if (durationInView <= 0) return;
 
+        if (durationInView <= 0) return;
+        
         const barElement = document.createElement('div');
         barElement.dataset.id = String(item.id);
 
         if (type === 'task') {
             barElement.classList.add('task-bar');
-            // MODIFIED: Add both mousedown and touchstart listeners
             barElement.addEventListener('mousedown', (e) => handleDragStart(e, item.id, barElement));
             barElement.addEventListener('touchstart', (e) => handleDragStart(e, item.id, barElement), { passive: false });
-
-
             barElement.addEventListener('mousemove', (e) => { 
                  if (!dragMode) { 
                     const rect = barElement.getBoundingClientRect();
-                    const mouseXInElement = e.clientX - rect.left; // Use clientX for mousemove
+                    const mouseXInElement = e.clientX - rect.left;
                     if (mouseXInElement < resizeHandleActiveZone || mouseXInElement > barElement.offsetWidth - resizeHandleActiveZone) {
                         barElement.style.cursor = 'ew-resize';
                     } else {
@@ -256,10 +236,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
             barElement.addEventListener('mouseleave', (e) => { if (!dragMode) barElement.style.cursor = 'grab'; });
-            
             barElement.addEventListener('click', (e) => { openEditModal(item.id); });
             
-            // ... (rest of task styling and info same as before) ...
             const assignedWorker = workers.find(w => w.id === item.workerId);
             if (assignedWorker) { barElement.style.backgroundColor = assignedWorker.color; }
             else { barElement.style.backgroundColor = "#cccccc"; }
@@ -270,9 +248,7 @@ document.addEventListener('DOMContentLoaded', () => {
             } else { barElement.style.outlineColor = '#888'; }
             barElement.textContent = `${item.name} (${item.duration}d)`;
             barElement.title = `Job: ${item.name}\nType: ${item.jobType || 'N/A'}\nWorker: ${assignedWorker ? assignedWorker.name : 'Unknown'}\nStart: ${formatDate(item.startDate)}\nEnd: ${formatDate(item.endDate)}\nDuration: ${item.duration} days`;
-
         } else if (type === 'leave') {
-             // ... (leave rendering same as before) ...
             barElement.classList.add('leave-bar');
             barElement.textContent = item.reason ? item.reason : "On Leave"; 
             const workerOnLeave = workers.find(w => w.id === item.workerId);
@@ -280,20 +256,19 @@ document.addEventListener('DOMContentLoaded', () => {
             barElement.addEventListener('click', () => openEditLeaveModal(item.id));
         }
         
-        barElement.style.left = `${offsetDays * currentCellWidth}px`;
-        barElement.style.width = `${durationInView * currentCellWidth - 2}px`; 
+        barElement.style.left = `${offsetDays * cellWidthForCalc}px`;
+        barElement.style.width = `${durationInView * cellWidthForCalc - 2}px`; 
         cellsDiv.appendChild(barElement);
     }
 
-    function renderGanttChart() { /* ... (Same as previous version) ... */ }
-    // Actual implementation (copied from previous correct version)
     function renderGanttChart() {
-        if (!ganttTimelineHeaderDiv || !ganttBodyDiv || !currentPeriodSpan || !chartFocusTitleSpan) {
+        if (!ganttTimelineHeaderDiv || !ganttBodyDiv || !currentPeriodSpan || !chartFocusTitleSpan || !ganttChartContainer || !ganttChartDiv ) {
             console.error("Critical DOM elements for Gantt chart not found! Cannot render.");
             return;
         }
         ganttTimelineHeaderDiv.innerHTML = '';
         ganttBodyDiv.innerHTML = '';
+
         const daysInView = 14;
         const firstDayOfView = new Date(currentDisplayDate); 
         firstDayOfView.setHours(0,0,0,0); 
@@ -305,67 +280,86 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         currentPeriodSpan.textContent = periodText;
         chartFocusTitleSpan.textContent = `${firstDayOfView.toLocaleString('default', { month: 'long' })} ${firstDayOfView.getFullYear()}`;
-        // const cellWidth is a global const now
+
+        // --- DYNAMIC CELL WIDTH CALCULATION ---
+        const workerNameHeaderPlaceholder = document.querySelector('.gantt-row-header'); // The static "Worker" header text cell
+        const workerNameColumnWidth = workerNameHeaderPlaceholder ? workerNameHeaderPlaceholder.offsetWidth : 130; // Get actual or default
+        
+        // Use clientWidth of ganttChartDiv (which is display:grid) and subtract worker column.
+        // Ensure ganttChartDiv itself is not constrained by something smaller than ganttChartContainer.
+        // For robustness, use ganttChartContainer, assuming it's the ultimate boundary for visible width.
+        const containerPadding = (ganttChartContainer.offsetWidth - ganttChartContainer.clientWidth); // Account for scrollbars if any, or padding
+        const availableFullWidth = ganttChartContainer.clientWidth;
+        const availableTimelineWidth = availableFullWidth - workerNameColumnWidth - 2; // -2 for potential borders on ganttChartDiv
+        
+        currentCellWidth = Math.max(40, Math.floor(availableTimelineWidth / daysInView)); 
+        // --- END DYNAMIC CELL WIDTH ---
+
         for (let i = 0; i < daysInView; i++) {
             const dayDate = addDays(new Date(firstDayOfView), i);
             const dayCell = document.createElement('div');
             dayCell.classList.add('gantt-day-header');
             dayCell.textContent = formatDate(dayDate, false); 
+            dayCell.style.width = `${currentCellWidth}px`; // Set dynamic width
+            dayCell.style.minWidth = `${currentCellWidth}px`; // Ensure minWidth matches
+            dayCell.style.flex = `0 0 ${currentCellWidth}px`; // For flex consistency if parent changes
             dayCell.title = dayDate.toLocaleDateString(); 
             if (dayDate.getDay() === 0) dayCell.classList.add('gantt-day-sunday'); 
             ganttTimelineHeaderDiv.appendChild(dayCell);
         }
-        ganttTimelineHeaderDiv.style.minWidth = `${daysInView * cellWidth}px`;
+        // ganttTimelineHeaderDiv.style.minWidth = `${daysInView * currentCellWidth}px`; // No longer needed if cells define width
+
         if (!workers || workers.length === 0) return;
+
         workers.forEach((worker) => {
             try {
                 const workerRow = document.createElement('div'); workerRow.classList.add('gantt-worker-row');
                 const workerNameCell = document.createElement('div'); workerNameCell.classList.add('gantt-worker-name'); workerNameCell.textContent = worker.name; workerRow.appendChild(workerNameCell);
-                const cellsDiv = document.createElement('div'); cellsDiv.classList.add('gantt-cells'); cellsDiv.style.minWidth = `${daysInView * cellWidth}px`;
+                const cellsDiv = document.createElement('div'); cellsDiv.classList.add('gantt-cells'); 
+                // cellsDiv.style.minWidth = `${daysInView * currentCellWidth}px`; // No longer needed
                 for (let i = 0; i < daysInView; i++) { 
                     const cellDate = addDays(new Date(firstDayOfView), i);
                     const cell = document.createElement('div'); cell.classList.add('gantt-cell');
+                    cell.style.width = `${currentCellWidth}px`; // Set dynamic width
+                    cell.style.minWidth = `${currentCellWidth}px`;
+                    cell.style.flex = `0 0 ${currentCellWidth}px`;
                     if (cellDate.getDay() === 0) cell.classList.add('gantt-cell-sunday');
                     cellsDiv.appendChild(cell);
                 }
                 workerRow.appendChild(cellsDiv);
                 ganttBodyDiv.appendChild(workerRow);
                 const workerTasks = tasks.filter(task => task && task.workerId === worker.id);
-                workerTasks.forEach(task => { renderBarOnChart(task, cellsDiv, firstDayOfView, daysInView, cellWidth, 'task'); });
+                workerTasks.forEach(task => { renderBarOnChart(task, cellsDiv, firstDayOfView, daysInView, currentCellWidth, 'task'); });
                 const workerLeaves = leaves.filter(leave => leave && leave.workerId === worker.id);
-                workerLeaves.forEach(leave => { renderBarOnChart(leave, cellsDiv, firstDayOfView, daysInView, cellWidth, 'leave'); });
+                workerLeaves.forEach(leave => { renderBarOnChart(leave, cellsDiv, firstDayOfView, daysInView, currentCellWidth, 'leave'); });
             } catch (e) { console.error(`Error processing worker ${worker.name}:`, e); }
         });
     }
 
-    // --- DRAG AND DROP HANDLER FUNCTIONS --- MODIFIED for Touch
+    // --- DRAG AND DROP HANDLER FUNCTIONS ---
     function handleDragStart(event, taskIdNum, element) { 
         const taskId = Number(taskIdNum);
-        // For mouse, check button. For touch, event.button is not relevant.
         if (event.type === 'mousedown' && event.button !== 0) return;
         if (editTaskModal.style.display === 'block' || editLeaveModal.style.display === 'block') return;
-        
         const task = tasks.find(t => t.id === taskId);
         if (!task) return;
-
-        // event.preventDefault(); // Moved to handleDragging for touchmove to allow click on other elements
+        // Prevent default for touchstart to allow drag, but not for mousedown immediately
+        // as that can prevent subsequent click events needed for modal.
+        // event.preventDefault() will be called in handleDragging for touchmove.
+        if (event.type === 'touchstart') {
+             event.preventDefault(); // Prevent scrolling on touch devices when starting a drag on a task
+        }
         isActualDrag = false; 
-
         const coords = getPointerCoordinates(event);
         const rect = element.getBoundingClientRect();
         const pointerXInElement = coords.x - rect.left;
-
         if (pointerXInElement < resizeHandleActiveZone) {
-            dragMode = 'resize-left';
-            document.body.style.cursor = 'ew-resize';
+            dragMode = 'resize-left'; document.body.style.cursor = 'ew-resize';
         } else if (pointerXInElement > element.offsetWidth - resizeHandleActiveZone) {
-            dragMode = 'resize-right';
-            document.body.style.cursor = 'ew-resize';
+            dragMode = 'resize-right'; document.body.style.cursor = 'ew-resize';
         } else {
-            dragMode = 'move';
-            document.body.style.cursor = 'grabbing';
+            dragMode = 'move'; document.body.style.cursor = 'grabbing';
         }
-        
         draggedTaskElement = element;
         draggedTaskId = taskId;
         dragStartX = coords.x; 
@@ -373,75 +367,60 @@ document.addEventListener('DOMContentLoaded', () => {
         originalTaskWidth = element.offsetWidth;
         originalTaskStartDate = new Date(task.startDate); 
         originalTaskDuration = task.duration;
-
         element.classList.add('dragging'); 
-
         document.addEventListener('mousemove', handleDragging);
-        document.addEventListener('touchmove', handleDragging, { passive: false }); // Allow preventDefault
+        document.addEventListener('touchmove', handleDragging, { passive: false });
         document.addEventListener('mouseup', handleDragEnd);
         document.addEventListener('touchend', handleDragEnd);
     }
 
     function handleDragging(event) { 
         if (!dragMode || !draggedTaskElement) return;
-        
-        // Prevent default only if it's a touch event and an actual drag is intended
-        if (event.type === 'touchmove') {
-            event.preventDefault(); 
-        }
-
+        if (event.type === 'touchmove') event.preventDefault(); 
         const coords = getPointerCoordinates(event);
         const dx = coords.x - dragStartX;
-
-        if (Math.abs(dx) > 5) { // Threshold for actual drag
-            isActualDrag = true;
-        }
+        if (Math.abs(dx) > 3) isActualDrag = true;
 
         if (dragMode === 'move') {
-            // ... (move logic same as before) ...
             let newLeft = originalTaskLeft + dx;
-            const dayIndex = Math.round(newLeft / cellWidth);
-            newLeft = dayIndex * cellWidth;
-            const maxLeft = (14 * cellWidth) - draggedTaskElement.offsetWidth; // 14 is daysInView
+            const dayIndex = Math.round(newLeft / currentCellWidth); 
+            newLeft = dayIndex * currentCellWidth;
+            const maxLeft = (14 * currentCellWidth) - draggedTaskElement.offsetWidth;
             newLeft = Math.max(0, Math.min(newLeft, maxLeft));
             draggedTaskElement.style.left = `${newLeft}px`;
         } else if (dragMode === 'resize-left') {
-            // ... (resize-left logic same as before) ...
             let newLeft = originalTaskLeft + dx;
             let newWidth = originalTaskWidth - dx;
-            const dayIndex = Math.round(newLeft / cellWidth);
-            const snappedNewLeft = dayIndex * cellWidth;
+            const dayIndex = Math.round(newLeft / currentCellWidth); 
+            const snappedNewLeft = dayIndex * currentCellWidth;
             newWidth += (originalTaskLeft - snappedNewLeft); 
             newLeft = snappedNewLeft;
-            const minPixelWidth = cellWidth; 
+            const minPixelWidth = currentCellWidth; 
             if (newWidth < minPixelWidth) {
                 newWidth = minPixelWidth;
                 newLeft = (originalTaskLeft + originalTaskWidth) - minPixelWidth; 
             }
             newLeft = Math.max(0, newLeft);
-            if (newLeft + newWidth > 14 * cellWidth) {
-                 newWidth = (14 * cellWidth) - newLeft;
+            if (newLeft + newWidth > 14 * currentCellWidth) { 
+                 newWidth = (14 * currentCellWidth) - newLeft;
             }
             draggedTaskElement.style.left = `${newLeft}px`;
             draggedTaskElement.style.width = `${newWidth}px`;
         } else if (dragMode === 'resize-right') {
-            // ... (resize-right logic same as before) ...
             let newWidth = originalTaskWidth + dx;
-            const numDays = Math.round(newWidth / cellWidth);
-            newWidth = numDays * cellWidth;
-            const minPixelWidth = cellWidth;
+            const numDays = Math.round(newWidth / currentCellWidth); 
+            newWidth = numDays * currentCellWidth;
+            const minPixelWidth = currentCellWidth; 
             newWidth = Math.max(minPixelWidth, newWidth);
-            const maxPossibleWidth = (14 * cellWidth) - originalTaskLeft;
+            const maxPossibleWidth = (14 * currentCellWidth) - originalTaskLeft; 
             newWidth = Math.min(newWidth, maxPossibleWidth);
             draggedTaskElement.style.width = `${newWidth}px`;
         }
     }
 
     function handleDragEnd(event) { 
-        const currentDragMode = dragMode; // Capture before reset
-        const wasAnActualDrag = isActualDrag; // Capture before reset
-
-        // Always remove listeners and reset styles first
+        const currentDragMode = dragMode; 
+        const wasAnActualDrag = isActualDrag; 
         if (draggedTaskElement) {
             draggedTaskElement.classList.remove('dragging');
             draggedTaskElement.style.cursor = 'grab'; 
@@ -453,11 +432,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.removeEventListener('touchend', handleDragEnd);
 
         if (!currentDragMode || !draggedTaskElement || draggedTaskId === null) {
-            // Reset state if drag wasn't properly initiated or already cleaned up
-            dragMode = null;
-            draggedTaskElement = null;
-            isActualDrag = false;
-            return;
+            dragMode = null; draggedTaskElement = null; isActualDrag = false; return;
         }
         
         let dataChanged = false;
@@ -469,28 +444,25 @@ document.addEventListener('DOMContentLoaded', () => {
                 const finalWidthPixels = parseFloat(draggedTaskElement.style.width);
 
                 if (currentDragMode === 'move') {
-                    const daysOffset = Math.round((finalLeftPixels - originalTaskLeft) / cellWidth);
-                    if (daysOffset !== 0 || wasAnActualDrag) { // Ensure actual move leads to update
+                    const daysOffset = Math.round((finalLeftPixels - originalTaskLeft) / currentCellWidth); 
+                    if (daysOffset !== 0 || wasAnActualDrag) { 
                         task.startDate = addDays(new Date(originalTaskStartDate), daysOffset);
                         task.endDate = addDays(new Date(task.startDate), task.duration - 1);
                         dataChanged = true;
                     }
                 } else if (currentDragMode === 'resize-left') {
-                    // ... (resize-left data update logic same as before) ...
-                    const daysShiftedForStart = Math.round((finalLeftPixels - originalTaskLeft) / cellWidth);
+                    const daysShiftedForStart = Math.round((finalLeftPixels - originalTaskLeft) / currentCellWidth); 
                     const newStartDate = addDays(new Date(originalTaskStartDate), daysShiftedForStart);
                     const originalEndDate = addDays(new Date(originalTaskStartDate), originalTaskDuration -1);
                     let newDuration = Math.round((originalEndDate.getTime() - newStartDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
                     newDuration = Math.max(1, newDuration); 
                     if (task.startDate.getTime() !== newStartDate.getTime() || task.duration !== newDuration) {
-                        task.startDate = newStartDate;
-                        task.duration = newDuration;
+                        task.startDate = newStartDate; task.duration = newDuration;
                         task.endDate = addDays(new Date(task.startDate), task.duration - 1);
                         dataChanged = true;
                     }
                 } else if (currentDragMode === 'resize-right') {
-                    // ... (resize-right data update logic same as before) ...
-                    let newDuration = Math.round(finalWidthPixels / cellWidth);
+                    let newDuration = Math.round(finalWidthPixels / currentCellWidth); 
                     newDuration = Math.max(1, newDuration); 
                     if (task.duration !== newDuration) {
                         task.duration = newDuration;
@@ -498,25 +470,25 @@ document.addEventListener('DOMContentLoaded', () => {
                         dataChanged = true;
                     }
                 }
-                if (dataChanged) {
-                    saveData('workshopTasks', tasks);
-                }
+                if (dataChanged) saveData('workshopTasks', tasks);
             }
         }
-        
-        // Reset global drag state
-        dragMode = null; 
-        draggedTaskElement = null;
-        draggedTaskId = null;
-        // isActualDrag is reset at the start of the next handleDragStart
-
-        if (dataChanged) {
-            renderGanttChart(); 
-        }
+        dragMode = null; draggedTaskElement = null; draggedTaskId = null;
+        isActualDrag = false; // Reset isActualDrag here after all checks
+        if (dataChanged) renderGanttChart(); 
     }
 
-    // --- EVENT HANDLER FUNCTIONS (TASK & LEAVE MANAGEMENT, TIMELINE) --- (Same as before)
-    // ... (Full implementations of handleAddTask, handleEditTask, etc.)
+    // --- EVENT HANDLER FUNCTIONS (TASK & LEAVE MANAGEMENT, TIMELINE) ---
+    // (Full implementations remain the same)
+    function handleAddTask(event) { /* ... */ }
+    function handleEditTask(event) { /* ... */ }
+    function handleDeleteTask() { /* ... */ }
+    function handleAddLeave(event) { /* ... */ }
+    function handleEditLeave(event) { /* ... */ }
+    function handleDeleteLeave() { /* ... */ }
+    function showPreviousPeriod() { /* ... */ }
+    function showNextPeriod() { /* ... */ }
+    // Actual implementations (copied from previous correct version)
     function handleAddTask(event) {
         event.preventDefault();
         const jobName = document.getElementById('jobName').value;
@@ -606,7 +578,6 @@ document.addEventListener('DOMContentLoaded', () => {
         renderGanttChart();
         closeLeaveModal(); 
     }
-
     function showPreviousPeriod() { 
         currentDisplayDate = addDays(currentDisplayDate, -14); 
         const dayOfWeek = currentDisplayDate.getDay();
@@ -623,8 +594,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- INITIALIZATION FUNCTION DEFINITION ---
-    function init() { /* ... */ }
-    // Actual implementation
     function init() {
         populateWorkerSelects();
         populateJobTypeSelects();
