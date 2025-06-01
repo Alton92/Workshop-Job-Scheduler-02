@@ -3,12 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Workshop Job Scheduler</title>
+    <title>Workshop Job Scheduler - KILANG BESI HIAP SENG (V1.5)</title>
     <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" integrity="sha512-BNaRQnYJYiPSqHHDb58B0yaPfCu+Wgds8Gp/gU33kqBtgNS4tSPHuGibyoeqMV/TJlSKda6FXlcxtT ألله يجعلها في ميزان حسناتك والله يرحم والديك ويغفر لهم ويسكنهم فسيح جناته يارب العالمينhd19zUrg4AQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha512-qZvrmS2ekKPF2mSznTQsxqPgnpkI4FSoxlabelMadh4iHczdU1OscB_wKOCSq LEN ٣JkS KorLhz/q納<seg_67> PassProductIntent="ONAWAX Collaborations " crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 </head>
 <body>
     <div class="app-container">
-        <h1>Workshop Job Scheduler</h1>
+        <header class="app-header">
+            <h1>Workshop Job Scheduler</h1>
+            <p class="company-subtitle">KILANG BESI HIAP SENG | 協成鐵廠</p>
+        </header>
+
+        <div class="gantt-chart-container">
+            <h2>Job Schedule</h2>
+            <div class="chart-period-title-container">
+                <span id="chartFocusTitle" class="chart-focus-title">Month Year</span>
+            </div>
+            
+            <div class="timeline-controls">
+                <button id="prevPeriodBtn" title="Previous 14 Days">&lt; Prev 14 Days</button>
+                <span id="currentPeriodSpan">Date Range</span> 
+                <button id="nextPeriodBtn" title="Next 14 Days">Next 14 Days &gt;</button>
+            </div>
+            <div id="ganttChartAreaToExport"> 
+                <div id="ganttChart" class="gantt-chart">
+                    <div class="gantt-header">
+                        <div class="gantt-row-header">Worker</div>
+                        <div class="gantt-timeline-header">
+                            </div>
+                    </div>
+                    <div class="gantt-body">
+                        </div>
+                </div>
+            </div>
+        </div>
 
         <div class="controls">
             <h2>Add New Job</h2>
@@ -56,27 +85,16 @@
                 </div>
                 <button type="submit">Add Leave</button>
             </form>
-        </div>
 
-        <div class="gantt-chart-container">
-            <h2>Job Schedule</h2>
-            <div class="chart-period-title-container">
-                <span id="chartFocusTitle" class="chart-focus-title">Month Year</span>
+            <h2 style="margin-top: 30px;">Data Management</h2>
+            <div class="data-management-section">
+                <button id="backupDataBtn" class="app-button">Backup Data (JSON)</button>
+                <button id="exportToPdfBtn" class="app-button app-button-secondary" style="margin-left: 10px;">Export View to PDF</button>
             </div>
-            
-            <div class="timeline-controls">
-                <button id="prevPeriodBtn">&lt; Prev 14 Days</button>
-                <span id="currentPeriodSpan">Date Range</span> 
-                <button id="nextPeriodBtn">Next 14 Days &gt;</button>
-            </div>
-            <div id="ganttChart" class="gantt-chart">
-                <div class="gantt-header">
-                    <div class="gantt-row-header">Worker</div>
-                    <div class="gantt-timeline-header">
-                        </div>
-                </div>
-                <div class="gantt-body">
-                    </div>
+            <div class="data-management-section" style="margin-top: 10px;">
+                <label for="restoreDataInput" class="app-label">Restore Data (from JSON):</label>
+                <input type="file" id="restoreDataInput" accept=".json" style="margin-left: 10px;">
+                <button id="restoreDataBtn" class="app-button app-button-warning" style="margin-left: 10px;">Restore</button>
             </div>
         </div>
     </div>
@@ -87,54 +105,26 @@
             <h2>Edit Job</h2>
             <form id="editJobForm">
                 <input type="hidden" id="editTaskId">
-                <div>
-                    <label for="editJobName">Job Name:</label>
-                    <input type="text" id="editJobName" required>
-                </div>
-                <div>
-                    <label for="editWorkerSelect">Assign to Worker:</label>
-                    <select id="editWorkerSelect" required></select>
-                </div>
-                <div>
-                    <label for="editJobTypeSelect">Job Type:</label>
-                    <select id="editJobTypeSelect" required></select>
-                </div>
-                <div>
-                    <label for="editStartDate">Start Date:</label>
-                    <input type="date" id="editStartDate" required>
-                </div>
-                <div>
-                    <label for="editDuration">Duration (days):</label>
-                    <input type="number" id="editDuration" min="1" required>
-                </div>
+                <div><label for="editJobName">Job Name:</label><input type="text" id="editJobName" required></div>
+                <div><label for="editWorkerSelect">Assign to Worker:</label><select id="editWorkerSelect" required></select></div>
+                <div><label for="editJobTypeSelect">Job Type:</label><select id="editJobTypeSelect" required></select></div>
+                <div><label for="editStartDate">Start Date:</label><input type="date" id="editStartDate" required></div>
+                <div><label for="editDuration">Duration (days):</label><input type="number" id="editDuration" min="1" required></div>
                 <button type="submit">Save Changes</button>
                 <button type="button" id="deleteTaskButton" class="delete-button">Delete Task</button>
             </form>
         </div>
     </div>
-
     <div id="editLeaveModal" class="modal">
         <div class="modal-content">
             <span class="close-leave-button">&times;</span>
             <h2>Edit Leave Details</h2>
             <form id="editLeaveForm">
                 <input type="hidden" id="editLeaveId">
-                <div>
-                    <label for="editLeaveWorkerDisplay">Worker:</label>
-                    <input type="text" id="editLeaveWorkerDisplay" readonly>
-                </div>
-                <div>
-                    <label for="editLeaveStartDate">Start Date:</label>
-                    <input type="date" id="editLeaveStartDate" required>
-                </div>
-                <div>
-                    <label for="editLeaveEndDate">End Date:</label>
-                    <input type="date" id="editLeaveEndDate" required>
-                </div>
-                <div>
-                    <label for="editLeaveReason">Reason (Optional):</label>
-                    <input type="text" id="editLeaveReason">
-                </div>
+                <div><label for="editLeaveWorkerDisplay">Worker:</label><input type="text" id="editLeaveWorkerDisplay" readonly></div>
+                <div><label for="editLeaveStartDate">Start Date:</label><input type="date" id="editLeaveStartDate" required></div>
+                <div><label for="editLeaveEndDate">End Date:</label><input type="date" id="editLeaveEndDate" required></div>
+                <div><label for="editLeaveReason">Reason (Optional):</label><input type="text" id="editLeaveReason"></div>
                 <button type="submit">Save Changes</button>
                 <button type="button" id="deleteLeaveButton" class="delete-button">Delete Leave</button>
             </form>
