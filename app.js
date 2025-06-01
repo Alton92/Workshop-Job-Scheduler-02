@@ -48,10 +48,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const diffToMondayInitial = dayOfWeekInitial === 0 ? -6 : 1 - dayOfWeekInitial;
     currentDisplayDate.setDate(currentDisplayDate.getDate() + diffToMondayInitial);
 
-    // --- DOM ELEMENTS ---
+    // --- DOM ELEMENTS --- (Same as V1.4, including backup/restore/pdf export buttons)
     const ganttChartContainer = document.querySelector('.gantt-chart-container');
     const workerSelect = document.getElementById('workerSelect');
-    // ... (all other existing DOM elements from V1.4)
     const editWorkerSelect = document.getElementById('editWorkerSelect');
     const addJobForm = document.getElementById('addJobForm');
     const jobTypeSelect = document.getElementById('jobTypeSelect');
@@ -85,7 +84,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const editLeaveEndDateInput = document.getElementById('editLeaveEndDate');
     const editLeaveReasonInput = document.getElementById('editLeaveReason');
     const deleteLeaveButton = document.getElementById('deleteLeaveButton');
-    // NEW DOM Elements for V1.5
     const backupDataBtn = document.getElementById('backupDataBtn');
     const restoreDataInput = document.getElementById('restoreDataInput');
     const restoreDataBtn = document.getElementById('restoreDataBtn');
@@ -95,17 +93,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- DRAG AND DROP STATE VARIABLES --- (Same as V1.4)
     let dragMode = null; 
-    let draggedTaskElement = null;
-    let draggedTaskId = null;
+    let draggedTaskElement = null; let draggedTaskId = null;
     let dragStartX = 0; let dragStartY = 0; 
     let originalTaskLeft = 0; let originalTaskWidth = 0; 
     let originalTaskStartDate = null; let originalTaskDuration = 0;
-    let originalWorkerId = null; 
-    let isActualDrag = false; 
-    const resizeHandleActiveZone = 10; 
-    let currentCellWidth = 50; 
-    let workerRowElements = []; 
-    let currentHoverWorkerId = null;
+    let originalWorkerId = null; let isActualDrag = false; 
+    const resizeHandleActiveZone = 10; let currentCellWidth = 50; 
+    let workerRowElements = []; let currentHoverWorkerId = null;
 
     // --- DATE HELPER FUNCTIONS --- (Same as V1.4)
     function formatDate(dateObj, includeYear = true) { /* ... */ }
@@ -143,8 +137,10 @@ document.addEventListener('DOMContentLoaded', () => {
         return []; 
     }
 
-
     // --- GENERIC LOCAL STORAGE FUNCTIONS --- (Same as V1.4)
+    function saveData(key, data) { /* ... */ }
+    function loadData(key, dateParserFn) { /* ... */ }
+    // Actual implementations
     function saveData(key, data) { localStorage.setItem(key, JSON.stringify(data));}
     function loadData(key, dateParserFn) {
         const storedData = localStorage.getItem(key);
@@ -158,23 +154,27 @@ document.addEventListener('DOMContentLoaded', () => {
         return [];
     }
     
-    // --- MODAL CONTROL FUNCTIONS --- (Same as V1.4)
-    function closeModal() { /* ... */ }
-    function openEditModal(taskId) { /* ... */ }
-    function closeLeaveModal() { /* ... */ }
-    function openEditLeaveModal(leaveId) { /* ... */ }
-    // Actual implementations
+    // --- MODAL CONTROL FUNCTIONS --- (Refined openEditModal check)
     function closeModal() { editTaskModal.style.display = 'none'; }
     function openEditModal(taskId) {
-        if (isActualDrag || dragMode) { isActualDrag = false; return; }
-        const task = tasks.find(t => t.id === taskId); if (!task) return;
+        // If a drag operation (move or resize) just occurred and potentially changed data,
+        // isActualDrag would have been true, and handleDragEnd would have reset it to false
+        // *after* calling renderGanttChart (if dataChanged was true).
+        // A simple tap will result in isActualDrag being false when handleDragEnd finishes.
+        if (isActualDrag) { // Check the flag that indicates if a mousemove threshold was met
+            return; 
+        }
+        const task = tasks.find(t => t.id === taskId);
+        if (!task) return;
         editTaskIdInput.value = task.id; editJobNameInput.value = task.name; editWorkerSelect.value = task.workerId;
         editJobTypeSelect.value = task.jobType || (jobTypes.length > 0 ? jobTypes[0].name : ''); 
         editStartDateInput.value = formatDate(task.startDate); editDurationInput.value = task.duration;
         editTaskModal.style.display = 'block';
     }
     function closeLeaveModal() { editLeaveModal.style.display = 'none'; }
-    function openEditLeaveModal(leaveId) {
+    function openEditLeaveModal(leaveId) { /* ... same ... */ }
+    // Actual implementation for openEditLeaveModal
+     function openEditLeaveModal(leaveId) {
         const leave = leaves.find(l => l.id === leaveId); if (!leave) return;
         const worker = workers.find(w => w.id === leave.workerId);
         editLeaveIdInput.value = leave.id; editLeaveWorkerDisplay.value = worker ? worker.name : 'Unknown Worker'; 
@@ -182,6 +182,7 @@ document.addEventListener('DOMContentLoaded', () => {
         editLeaveReasonInput.value = leave.reason || '';
         editLeaveModal.style.display = 'block';
     }
+
 
     // --- POPULATION FUNCTIONS --- (Same as V1.4)
     function populateWorkerSelects() { /* ... */ }
@@ -212,61 +213,43 @@ document.addEventListener('DOMContentLoaded', () => {
         } else { return { x: event.clientX, y: event.clientY }; }
     }
 
-
     // --- RENDERING FUNCTIONS --- (renderBarOnChart & renderGanttChart same as V1.4)
     function renderBarOnChart(item, cellsDiv, periodStartDate, daysInPeriod, cellWidthForCalc, type) { /* ... */ }
     function renderGanttChart() { /* ... */ }
     // Actual implementations (copied from V1.4)
     function renderBarOnChart(item, cellsDiv, periodStartDate, daysInPeriod, cellWidthForCalc, type) {
-        const itemStartDateOriginal = new Date(item.startDate); 
-        const itemEndDateOriginal = new Date(item.endDate);   
+        const itemStartDateOriginal = new Date(item.startDate); const itemEndDateOriginal = new Date(item.endDate);   
         const itemStartDay = new Date(itemStartDateOriginal); itemStartDay.setHours(0,0,0,0); 
         const itemEndDay = new Date(itemEndDateOriginal); itemEndDay.setHours(0,0,0,0); 
-        const periodStartDay = new Date(periodStartDate); 
-        const periodEndViewDay = addDays(new Date(periodStartDay), daysInPeriod - 1); 
+        const periodStartDay = new Date(periodStartDate); const periodEndViewDay = addDays(new Date(periodStartDay), daysInPeriod - 1); 
         if (itemEndDay < periodStartDay || itemStartDay > periodEndViewDay) { return; }
         let renderStartIndexInPeriod = 0;
-        if (itemStartDay > periodStartDay) {
-            const diffTime = itemStartDay.getTime() - periodStartDay.getTime();
-            renderStartIndexInPeriod = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-        }
+        if (itemStartDay > periodStartDay) { const diffTime = itemStartDay.getTime() - periodStartDay.getTime(); renderStartIndexInPeriod = Math.floor(diffTime / (1000 * 60 * 60 * 24)); }
         let renderEndIndexInPeriod = daysInPeriod - 1;
-        if (itemEndDay < periodEndViewDay) {
-            const diffTime = itemEndDay.getTime() - periodStartDay.getTime();
-            renderEndIndexInPeriod = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-        }
-        renderStartIndexInPeriod = Math.max(0, renderStartIndexInPeriod);
-        renderEndIndexInPeriod = Math.min(daysInPeriod - 1, renderEndIndexInPeriod);
-        renderEndIndexInPeriod = Math.max(renderStartIndexInPeriod, renderEndIndexInPeriod); 
-        const offsetDays = renderStartIndexInPeriod;
-        const durationInView = renderEndIndexInPeriod - renderStartIndexInPeriod + 1;
+        if (itemEndDay < periodEndViewDay) { const diffTime = itemEndDay.getTime() - periodStartDay.getTime(); renderEndIndexInPeriod = Math.floor(diffTime / (1000 * 60 * 60 * 24)); }
+        renderStartIndexInPeriod = Math.max(0, renderStartIndexInPeriod); renderEndIndexInPeriod = Math.min(daysInPeriod - 1, renderEndIndexInPeriod); renderEndIndexInPeriod = Math.max(renderStartIndexInPeriod, renderEndIndexInPeriod); 
+        const offsetDays = renderStartIndexInPeriod; const durationInView = renderEndIndexInPeriod - renderStartIndexInPeriod + 1;
         if (durationInView <= 0) return;
-        const barElement = document.createElement('div');
-        barElement.dataset.id = String(item.id);
+        const barElement = document.createElement('div'); barElement.dataset.id = String(item.id);
         if (type === 'task') {
             barElement.classList.add('task-bar');
             barElement.addEventListener('mousedown', (e) => handleDragStart(e, item, barElement)); 
             barElement.addEventListener('touchstart', (e) => handleDragStart(e, item, barElement), { passive: false }); 
             barElement.addEventListener('mousemove', (e) => { 
                  if (!dragMode) { 
-                    const rect = barElement.getBoundingClientRect();
-                    const mouseXInElement = e.clientX - rect.left;
-                    if (mouseXInElement < resizeHandleActiveZone || mouseXInElement > barElement.offsetWidth - resizeHandleActiveZone) {
-                        barElement.style.cursor = 'ew-resize';
-                    } else { barElement.style.cursor = 'grab'; }
+                    const rect = barElement.getBoundingClientRect(); const mouseXInElement = e.clientX - rect.left;
+                    if (mouseXInElement < resizeHandleActiveZone || mouseXInElement > barElement.offsetWidth - resizeHandleActiveZone) barElement.style.cursor = 'ew-resize';
+                    else barElement.style.cursor = 'grab';
                 }
             });
             barElement.addEventListener('mouseleave', (e) => { if (!dragMode) barElement.style.cursor = 'grab'; });
             barElement.addEventListener('click', (e) => { openEditModal(item.id); });
             barElement.textContent = `${item.name} (${item.duration}d)`;
             const assignedWorker = workers.find(w => w.id === item.workerId);
-            if (assignedWorker) { barElement.style.backgroundColor = assignedWorker.color; }
-            else { barElement.style.backgroundColor = "#cccccc"; }
+            if (assignedWorker) { barElement.style.backgroundColor = assignedWorker.color; } else { barElement.style.backgroundColor = "#cccccc"; }
             const jobTypeData = jobTypes.find(jt => jt.name === item.jobType);
-            if (jobTypeData) {
-                barElement.style.outlineColor = jobTypeData.outlineColor;
-                barElement.style.setProperty('--hover-glow-color', jobTypeData.glowColor); 
-            } else { barElement.style.outlineColor = '#888'; }
+            if (jobTypeData) { barElement.style.outlineColor = jobTypeData.outlineColor; barElement.style.setProperty('--hover-glow-color', jobTypeData.glowColor); } 
+            else { barElement.style.outlineColor = '#888'; }
             barElement.title = `Job: ${item.name}${item.overtimeSundays && item.overtimeSundays.length > 0 ? ' (Includes Overtime)' : ''}\nType: ${item.jobType || 'N/A'}\nWorker: ${assignedWorker ? assignedWorker.name : 'Unknown'}\nStart: ${formatDate(itemStartDateOriginal)}\nEnd: ${formatDate(itemEndDateOriginal)}\nDuration: ${item.duration} days`;
             if (item.overtimeSundays && item.overtimeSundays.length > 0) {
                 for (let i = 0; i < durationInView; i++) {
@@ -275,54 +258,40 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (currentDateInLoop.getDay() === 0) { 
                         const currentDateStr = formatDate(currentDateInLoop); 
                         if (item.overtimeSundays.includes(currentDateStr)) {
-                            const otIndicatorDiv = document.createElement('div');
-                            otIndicatorDiv.classList.add('task-bar-ot-indicator');
-                            otIndicatorDiv.textContent = "+1D"; 
-                            otIndicatorDiv.style.width = `${cellWidthForCalc}px`;
-                            otIndicatorDiv.style.left = `${i * cellWidthForCalc}px`; 
+                            const otIndicatorDiv = document.createElement('div'); otIndicatorDiv.classList.add('task-bar-ot-indicator'); otIndicatorDiv.textContent = "+1D"; 
+                            otIndicatorDiv.style.width = `${cellWidthForCalc}px`; otIndicatorDiv.style.left = `${i * cellWidthForCalc}px`; 
                             barElement.appendChild(otIndicatorDiv);
                         }
                     }
                 }
             }
         } else if (type === 'leave') {
-            barElement.classList.add('leave-bar');
-            barElement.textContent = item.reason ? item.reason : "On Leave"; 
+            barElement.classList.add('leave-bar'); barElement.textContent = item.reason ? item.reason : "On Leave"; 
             const workerOnLeave = workers.find(w => w.id === item.workerId);
             barElement.title = `On Leave: ${workerOnLeave ? workerOnLeave.name : 'Unknown'}\nStart: ${formatDate(itemStartDateOriginal)}\nEnd: ${formatDate(itemEndDateOriginal)}\nReason: ${item.reason || 'N/A'}`;
             barElement.addEventListener('click', () => openEditLeaveModal(item.id));
         }
-        barElement.style.left = `${offsetDays * cellWidthForCalc}px`;
-        barElement.style.width = `${durationInView * cellWidthForCalc - 2}px`; 
+        barElement.style.left = `${offsetDays * cellWidthForCalc}px`; barElement.style.width = `${durationInView * cellWidthForCalc - 2}px`; 
         cellsDiv.appendChild(barElement);
     }
     function renderGanttChart() {
-        if (!ganttTimelineHeaderDiv || !ganttBodyDiv || !currentPeriodSpan || !chartFocusTitleSpan || !ganttChartContainer || !ganttChartDiv ) {
-            console.error("Critical DOM elements for Gantt chart not found! Cannot render."); return;
-        }
+        if (!ganttTimelineHeaderDiv || !ganttBodyDiv || !currentPeriodSpan || !chartFocusTitleSpan || !ganttChartContainer || !ganttChartDiv ) { console.error("Critical DOM elements for Gantt chart not found! Cannot render."); return; }
         ganttTimelineHeaderDiv.innerHTML = ''; ganttBodyDiv.innerHTML = ''; workerRowElements = []; 
-        const daysInView = 14;
-        const firstDayOfView = new Date(currentDisplayDate); firstDayOfView.setHours(0,0,0,0); 
+        const daysInView = 14; const firstDayOfView = new Date(currentDisplayDate); firstDayOfView.setHours(0,0,0,0); 
         const lastDayOfView = addDays(new Date(firstDayOfView), daysInView - 1);
         const rangeOptions = { month: 'short', day: 'numeric' };
         let periodText = `${firstDayOfView.toLocaleDateString(undefined, rangeOptions)} - ${lastDayOfView.toLocaleDateString(undefined, rangeOptions)}, ${firstDayOfView.getFullYear()}`;
-        if (firstDayOfView.getFullYear() !== lastDayOfView.getFullYear()) {
-             periodText = `${firstDayOfView.toLocaleDateString(undefined, {...rangeOptions, year: 'numeric'})} - ${lastDayOfView.toLocaleDateString(undefined, {...rangeOptions, year: 'numeric'})}`;
-        }
-        currentPeriodSpan.textContent = periodText;
-        chartFocusTitleSpan.textContent = `${firstDayOfView.toLocaleString('default', { month: 'long' })} ${firstDayOfView.getFullYear()}`;
+        if (firstDayOfView.getFullYear() !== lastDayOfView.getFullYear()) { periodText = `${firstDayOfView.toLocaleDateString(undefined, {...rangeOptions, year: 'numeric'})} - ${lastDayOfView.toLocaleDateString(undefined, {...rangeOptions, year: 'numeric'})}`; }
+        currentPeriodSpan.textContent = periodText; chartFocusTitleSpan.textContent = `${firstDayOfView.toLocaleString('default', { month: 'long' })} ${firstDayOfView.getFullYear()}`;
         const workerNameHeaderPlaceholder = document.querySelector('.gantt-row-header'); 
         const workerNameColumnWidth = workerNameHeaderPlaceholder ? workerNameHeaderPlaceholder.offsetWidth : 130; 
-        const availableFullWidth = ganttChartContainer.clientWidth;
-        const availableTimelineWidth = availableFullWidth - workerNameColumnWidth - 2; 
+        const availableFullWidth = ganttChartContainer.clientWidth; const availableTimelineWidth = availableFullWidth - workerNameColumnWidth - 2; 
         currentCellWidth = Math.max(40, Math.floor(availableTimelineWidth / daysInView)); 
         for (let i = 0; i < daysInView; i++) {
-            const dayDate = addDays(new Date(firstDayOfView), i);
-            const dayCell = document.createElement('div'); dayCell.classList.add('gantt-day-header');
+            const dayDate = addDays(new Date(firstDayOfView), i); const dayCell = document.createElement('div'); dayCell.classList.add('gantt-day-header');
             dayCell.textContent = formatDate(dayDate, false); 
             dayCell.style.width = `${currentCellWidth}px`; dayCell.style.minWidth = `${currentCellWidth}px`; dayCell.style.flex = `0 0 ${currentCellWidth}px`; 
-            dayCell.title = dayDate.toLocaleDateString(); 
-            if (dayDate.getDay() === 0) dayCell.classList.add('gantt-day-sunday'); 
+            dayCell.title = dayDate.toLocaleDateString(); if (dayDate.getDay() === 0) dayCell.classList.add('gantt-day-sunday'); 
             ganttTimelineHeaderDiv.appendChild(dayCell);
         }
         if (!workers || workers.length === 0) return;
@@ -338,8 +307,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 ganttBodyDiv.appendChild(logicalRowWrapper); 
                 workerRowElements.push({ workerId: worker.id, nameCell: workerNameCell, cellsElement: cellsDiv });
                 for (let i = 0; i < daysInView; i++) { 
-                    const cellDate = addDays(new Date(firstDayOfView), i);
-                    const cell = document.createElement('div'); cell.classList.add('gantt-cell');
+                    const cellDate = addDays(new Date(firstDayOfView), i); const cell = document.createElement('div'); cell.classList.add('gantt-cell');
                     cell.style.width = `${currentCellWidth}px`; cell.style.minWidth = `${currentCellWidth}px`; cell.style.flex = `0 0 ${currentCellWidth}px`;
                     if (cellDate.getDay() === 0) cell.classList.add('gantt-cell-sunday');
                     cellsDiv.appendChild(cell);
@@ -353,21 +321,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
 
-    // --- DRAG AND DROP HANDLER FUNCTIONS --- (Same as V1.4)
-    function handleDragStart(event, taskItem, element) { /* ... */ }
-    function handleDragging(event) { /* ... */ }
-    async function handleDragEnd(event) { /* ... */ }
-    // Actual implementations (copied from V1.4)
+    // --- DRAG AND DROP HANDLER FUNCTIONS --- (Refined for touch/click distinction)
     function handleDragStart(event, taskItem, element) { 
         const taskId = taskItem.id;
         if (event.type === 'mousedown' && event.button !== 0) return;
         if (editTaskModal.style.display === 'block' || editLeaveModal.style.display === 'block') return;
         if (!taskItem) return;
-        if (event.type === 'touchstart') event.preventDefault(); 
-        isActualDrag = false; 
+        
+        isActualDrag = false; // Reset for current operation
         const coords = getPointerCoordinates(event);
         const rect = element.getBoundingClientRect();
         const pointerXInElement = coords.x - rect.left;
+
         if (pointerXInElement < resizeHandleActiveZone) {
             dragMode = 'resize-left'; document.body.style.cursor = 'ew-resize';
         } else if (pointerXInElement > element.offsetWidth - resizeHandleActiveZone) {
@@ -375,6 +340,13 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             dragMode = 'move'; document.body.style.cursor = 'grabbing';
         }
+        
+        // Prevent default only for touchstart to allow drag scrolling prevention in handleDragging
+        // but allow default for mousedown to ensure click event fires for modal.
+        if (event.type === 'touchstart' && dragMode) { // Only if a drag mode is certain
+            event.preventDefault(); 
+        }
+
         draggedTaskElement = element; draggedTaskId = taskId; dragStartX = coords.x; dragStartY = coords.y;
         originalTaskLeft = element.offsetLeft; originalTaskWidth = element.offsetWidth;
         originalTaskStartDate = new Date(taskItem.startDate); originalTaskDuration = taskItem.duration;
@@ -385,12 +357,22 @@ document.addEventListener('DOMContentLoaded', () => {
         document.addEventListener('mouseup', handleDragEnd);
         document.addEventListener('touchend', handleDragEnd);
     }
+
     function handleDragging(event) { 
         if (!dragMode || !draggedTaskElement) return;
-        if (event.type === 'touchmove') event.preventDefault(); 
+        
+        // Prevent default scrolling/zooming behavior during touch drag
+        if (event.type === 'touchmove') {
+            event.preventDefault(); 
+        }
+
         const coords = getPointerCoordinates(event);
-        const dx = coords.x - dragStartX; const dy = coords.y - dragStartY; 
-        if (Math.abs(dx) > 3 || Math.abs(dy) > 3) isActualDrag = true;
+        const dx = coords.x - dragStartX; 
+        const dy = coords.y - dragStartY; 
+        if (Math.abs(dx) > 5 || Math.abs(dy) > 5) { // Increased threshold slightly
+            isActualDrag = true;
+        }
+
         if (dragMode === 'move') {
             let newLeft = originalTaskLeft + dx; 
             const dayIndex = Math.round(newLeft / currentCellWidth); newLeft = dayIndex * currentCellWidth;
@@ -434,58 +416,75 @@ document.addEventListener('DOMContentLoaded', () => {
             draggedTaskElement.style.width = `${newWidth}px`;
         }
     }
+
     async function handleDragEnd(event) { 
-        const currentDragMode = dragMode; const wasAnActualDrag = isActualDrag; 
+        const currentDragModeForEnd = dragMode; // Capture before reset
+        const wasAnActualDragForEnd = isActualDrag; 
+
         workerRowElements.forEach(rowInfo => { rowInfo.nameCell.classList.remove('worker-row-drop-target'); rowInfo.cellsElement.classList.remove('worker-row-drop-target'); });
         currentHoverWorkerId = null;
         if (draggedTaskElement) { draggedTaskElement.classList.remove('dragging'); draggedTaskElement.style.cursor = 'grab'; }
         document.body.style.cursor = '';
         document.removeEventListener('mousemove', handleDragging); document.removeEventListener('touchmove', handleDragging);
         document.removeEventListener('mouseup', handleDragEnd); document.removeEventListener('touchend', handleDragEnd);
-        if (!currentDragMode || !draggedTaskElement || draggedTaskId === null) { dragMode = null; draggedTaskElement = null; isActualDrag = false; return; }
-        let dataChanged = false; const taskIndex = tasks.findIndex(t => t.id === draggedTaskId);
-        if (taskIndex !== -1 && (wasAnActualDrag || currentDragMode.startsWith('resize-'))) {
-            const task = tasks[taskIndex]; const originalOvertimeSundaysForConfirmation = [...task.overtimeSundays]; 
-            let newStartDate = new Date(originalTaskStartDate); let newDuration = originalTaskDuration; let newWorkerId = originalWorkerId; 
-            const finalLeftPixels = parseFloat(draggedTaskElement.style.left); const finalWidthPixels = parseFloat(draggedTaskElement.style.width);
-            const pointerCoords = getPointerCoordinates(event.type.startsWith('touch') && event.changedTouches && event.changedTouches.length > 0 ? event.changedTouches[0] : event);
-            if (currentDragMode === 'move') {
-                for (const rowInfo of workerRowElements) {
-                    const rowRect = rowInfo.cellsElement.getBoundingClientRect();
-                    if (pointerCoords.y >= rowRect.top && pointerCoords.y <= rowRect.bottom) { newWorkerId = rowInfo.workerId; break; }
+
+        let dataChanged = false;
+        if (currentDragModeForEnd && draggedTaskElement && draggedTaskId !== null) {
+            if (wasAnActualDragForEnd || currentDragModeForEnd.startsWith('resize-')) {
+                const taskIndex = tasks.findIndex(t => t.id === draggedTaskId);
+                if (taskIndex !== -1) {
+                    const task = tasks[taskIndex];
+                    const originalOvertimeSundaysForConfirmation = [...task.overtimeSundays]; 
+                    let newStartDate = new Date(originalTaskStartDate); 
+                    let newDuration = originalTaskDuration;       
+                    let newWorkerId = originalWorkerId; 
+                    const finalLeftPixels = parseFloat(draggedTaskElement.style.left);
+                    const finalWidthPixels = parseFloat(draggedTaskElement.style.width);
+                    const pointerCoords = getPointerCoordinates(event.type.startsWith('touch') && event.changedTouches && event.changedTouches.length > 0 ? event.changedTouches[0] : event);
+
+                    if (currentDragModeForEnd === 'move') {
+                        for (const rowInfo of workerRowElements) {
+                            const rowRect = rowInfo.cellsElement.getBoundingClientRect();
+                            if (pointerCoords.y >= rowRect.top && pointerCoords.y <= rowRect.bottom) { newWorkerId = rowInfo.workerId; break; }
+                        }
+                        const daysOffset = Math.round(finalLeftPixels / currentCellWidth);
+                        const firstDayOfCurrentView = new Date(currentDisplayDate); firstDayOfCurrentView.setHours(0,0,0,0);
+                        newStartDate = addDays(firstDayOfCurrentView, daysOffset);
+                        if (task.startDate.getTime() !== newStartDate.getTime() || task.workerId !== newWorkerId) dataChanged = true;
+                    } else if (currentDragModeForEnd === 'resize-left') {
+                        const daysShiftedForStart = Math.round((finalLeftPixels - originalTaskLeft) / currentCellWidth); 
+                        newStartDate = addDays(new Date(originalTaskStartDate), daysShiftedForStart);
+                        const originalEndDateForCalc = addDays(new Date(originalTaskStartDate), originalTaskDuration -1);
+                        let calculatedNewDuration = Math.round((originalEndDateForCalc.getTime() - newStartDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+                        newDuration = Math.max(1, calculatedNewDuration); 
+                        if (task.startDate.getTime() !== newStartDate.getTime() || task.duration !== newDuration) dataChanged = true;
+                    } else if (currentDragModeForEnd === 'resize-right') {
+                        newDuration = Math.round(finalWidthPixels / currentCellWidth); newDuration = Math.max(1, newDuration); 
+                        if (task.duration !== newDuration) dataChanged = true;
+                    }
+
+                    if (dataChanged) {
+                        const finalProposedEndDate = addDays(new Date(newStartDate), newDuration - 1);
+                        const allSundaysInNewRange = getSundaysInRange(newStartDate, finalProposedEndDate);
+                        let confirmedSundaysForNewRange = originalOvertimeSundaysForConfirmation.filter(sunDateStr => {
+                            const sunDate = new Date(sunDateStr + "T00:00:00"); return sunDate >= newStartDate && sunDate <= finalProposedEndDate;
+                        });
+                        const sundaysNeedingFreshConfirmation = allSundaysInNewRange.filter(sunDateStr => !confirmedSundaysForNewRange.includes(sunDateStr));
+                        if (sundaysNeedingFreshConfirmation.length > 0) {
+                            const newlyConfirmedOT = await confirmOvertimeForSundays(task.name, sundaysNeedingFreshConfirmation);
+                            newlyConfirmedOT.forEach(confirmedSun => { if (!confirmedSundaysForNewRange.includes(confirmedSun)) { confirmedSundaysForNewRange.push(confirmedSun); }});
+                        }
+                        task.workerId = newWorkerId; task.startDate = newStartDate; task.duration = newDuration; 
+                        task.endDate = finalProposedEndDate; task.overtimeSundays = [...new Set(confirmedSundaysForNewRange)]; 
+                        saveData('workshopTasks', tasks);
+                    }
                 }
-                const daysOffset = Math.round(finalLeftPixels / currentCellWidth);
-                const firstDayOfCurrentView = new Date(currentDisplayDate); firstDayOfCurrentView.setHours(0,0,0,0);
-                newStartDate = addDays(firstDayOfCurrentView, daysOffset);
-                if (task.startDate.getTime() !== newStartDate.getTime() || task.workerId !== newWorkerId) dataChanged = true;
-            } else if (currentDragMode === 'resize-left') {
-                const daysShiftedForStart = Math.round((finalLeftPixels - originalTaskLeft) / currentCellWidth); 
-                newStartDate = addDays(new Date(originalTaskStartDate), daysShiftedForStart);
-                const originalEndDateForCalc = addDays(new Date(originalTaskStartDate), originalTaskDuration -1);
-                let calculatedNewDuration = Math.round((originalEndDateForCalc.getTime() - newStartDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-                newDuration = Math.max(1, calculatedNewDuration); 
-                if (task.startDate.getTime() !== newStartDate.getTime() || task.duration !== newDuration) dataChanged = true;
-            } else if (currentDragMode === 'resize-right') {
-                newDuration = Math.round(finalWidthPixels / currentCellWidth); newDuration = Math.max(1, newDuration); 
-                if (task.duration !== newDuration) dataChanged = true;
-            }
-            if (dataChanged) {
-                const finalProposedEndDate = addDays(new Date(newStartDate), newDuration - 1);
-                const allSundaysInNewRange = getSundaysInRange(newStartDate, finalProposedEndDate);
-                let confirmedSundaysForNewRange = originalOvertimeSundaysForConfirmation.filter(sunDateStr => {
-                    const sunDate = new Date(sunDateStr + "T00:00:00"); return sunDate >= newStartDate && sunDate <= finalProposedEndDate;
-                });
-                const sundaysNeedingFreshConfirmation = allSundaysInNewRange.filter(sunDateStr => !confirmedSundaysForNewRange.includes(sunDateStr));
-                if (sundaysNeedingFreshConfirmation.length > 0) {
-                    const newlyConfirmedOT = await confirmOvertimeForSundays(task.name, sundaysNeedingFreshConfirmation);
-                    newlyConfirmedOT.forEach(confirmedSun => { if (!confirmedSundaysForNewRange.includes(confirmedSun)) { confirmedSundaysForNewRange.push(confirmedSun); }});
-                }
-                task.workerId = newWorkerId; task.startDate = newStartDate; task.duration = newDuration; 
-                task.endDate = finalProposedEndDate; task.overtimeSundays = [...new Set(confirmedSundaysForNewRange)]; 
-                saveData('workshopTasks', tasks);
             }
         }
-        dragMode = null; draggedTaskElement = null; draggedTaskId = null; isActualDrag = false; 
+        
+        dragMode = null; draggedTaskElement = null; draggedTaskId = null; 
+        isActualDrag = false; // Reset this crucial flag AFTER all checks and potential data changes.
+        
         if (dataChanged) renderGanttChart(); 
     }
 
@@ -576,30 +575,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
 
-    // --- Data Backup/Restore & PDF Export Functions (NEW for V1.5) ---
+    // --- Data Backup/Restore & PDF Export Functions (V1.5) ---
     function backupData() {
-        const dataToBackup = {
-            version: "1.5", 
-            timestamp: new Date().toISOString(),
-            tasks: tasks,
-            leaves: leaves,
-            // Optionally backup currentDisplayDate if you want the view to be restored too
-            // currentDisplayDate: formatDate(currentDisplayDate) 
-        };
+        const dataToBackup = { version: "1.5.1", timestamp: new Date().toISOString(), tasks: tasks, leaves: leaves };
         const jsonString = JSON.stringify(dataToBackup, null, 2);
         const blob = new Blob([jsonString], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
+        const a = document.createElement('a'); a.href = url;
         const dateSuffix = new Date().toISOString().slice(0,10).replace(/-/g,'');
         a.download = `workshop_scheduler_backup_${dateSuffix}.json`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        // alert("Data backup downloaded!"); // Optional: User feedback
+        document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
     }
-
     function restoreData(event) {
         const file = event.target.files[0];
         if (!file) { alert("No file selected for restore."); return; }
@@ -613,99 +599,61 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (importedData && Array.isArray(importedData.tasks) && Array.isArray(importedData.leaves)) {
                     tasks = importedData.tasks.map(task => parseTaskDates(task)).filter(t => t !== null);
                     leaves = importedData.leaves.map(leave => parseLeaveDates(leave)).filter(l => l !== null);
-                    // if (importedData.currentDisplayDate) { // Optional: Restore view date
-                    //    currentDisplayDate = new Date(importedData.currentDisplayDate + "T00:00:00");
-                    //    const dayOfWeek = currentDisplayDate.getDay();
-                    //    const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeekInitial; // Use initial for safety
-                    //    currentDisplayDate.setDate(currentDisplayDate.getDate() + diffToMonday);
-                    // } else { // Default to current week's Monday if not in backup
-                        currentDisplayDate = new Date(); currentDisplayDate.setHours(0,0,0,0); 
-                        const dayOfWeek = currentDisplayDate.getDay();
-                        const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
-                        currentDisplayDate.setDate(currentDisplayDate.getDate() + diffToMonday);
-                    // }
-                    saveData('workshopTasks', tasks); 
-                    saveData('workshopLeaves', leaves); 
-                    renderGanttChart();
-                    alert("Data restored successfully!");
+                    currentDisplayDate = new Date(); currentDisplayDate.setHours(0,0,0,0); 
+                    const dayOfWeek = currentDisplayDate.getDay();
+                    const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+                    currentDisplayDate.setDate(currentDisplayDate.getDate() + diffToMonday);
+                    saveData('workshopTasks', tasks); saveData('workshopLeaves', leaves); 
+                    renderGanttChart(); alert("Data restored successfully!");
                 } else { alert("Invalid backup file format."); }
-            } catch (error) {
-                console.error("Error restoring data:", error);
-                alert("Failed to restore data. File may be corrupted or not a valid backup.");
+            } catch (error) { console.error("Error restoring data:", error); alert("Failed to restore data. File may be corrupted.");
             } finally { restoreDataInput.value = ""; }
         };
         reader.onerror = () => { alert("Error reading the backup file."); restoreDataInput.value = ""; };
         reader.readAsText(file);
     }
-
     function exportScheduleToPdf() {
-        alert("Exporting to PDF... This might take a moment.");
-        const chartElement = document.getElementById('ganttChartAreaToExport'); // Target the wrapper
-        if (!chartElement) {
-            alert("Could not find chart element to export.");
-            return;
-        }
-
-        // Temporarily ensure all content is visible for capture if it relies on scrollHeight
-        // This is tricky with sticky headers. For now, we capture what's rendered by html2canvas.
-        // For very wide content, html2canvas might need specific width/height options.
-
+        alert("Exporting to PDF... This might take a moment. Please wait.");
+        const chartElement = document.getElementById('ganttChartAreaToExport');
+        if (!chartElement) { alert("Error: Chart element not found for export."); return; }
+        console.log("PDF Export: Starting html2canvas capture...");
         html2canvas(chartElement, { 
-            scale: 2, // Increase for better resolution
-            useCORS: true, // If you ever add external images
-            logging: false, // Disable html2canvas logging unless debugging
-            // You might need to experiment with width/height/windowWidth/windowHeight options
-            // if the full chart (especially very wide ones) isn't captured properly.
-            // For now, it captures based on element's current rendered size.
-            // width: chartElement.scrollWidth, // Attempt to capture full scrollable width
-            // windowWidth: chartElement.scrollWidth
+            scale: 1.5, useCORS: true, logging: true, backgroundColor: "#ffffff" 
         }).then(canvas => {
-            const imgData = canvas.toDataURL('image/png');
-            const { jsPDF } = window.jspdf; // Access jspdf from global scope
-
-            // Determine PDF orientation and dimensions
-            // A4 size: 210mm x 297mm. If chart is wide, landscape is better.
-            const pdfWidth = 297; // A4 landscape width in mm
-            const pdfHeight = 210; // A4 landscape height in mm
-            const pdf = new jsPDF({
-                orientation: 'landscape',
-                unit: 'mm',
-                format: 'a4'
-            });
-
-            const imgProps = pdf.getImageProperties(imgData);
-            const margin = 10; // 10mm margin
-            const usablePdfWidth = pdfWidth - 2 * margin;
-            const usablePdfHeight = pdfHeight - 2 * margin;
-
-            const imgAspectRatio = imgProps.width / imgProps.height;
-            let finalImgWidth = usablePdfWidth;
-            let finalImgHeight = finalImgWidth / imgAspectRatio;
-
-            if (finalImgHeight > usablePdfHeight) {
-                finalImgHeight = usablePdfHeight;
-                finalImgWidth = finalImgHeight * imgAspectRatio;
+            console.log("PDF Export: html2canvas capture successful. Canvas dimensions:", canvas.width, canvas.height);
+            try {
+                const imgData = canvas.toDataURL('image/png', 0.9); 
+                console.log("PDF Export: Image data URL created (length approx):", imgData.length / 1024, "KB");
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
+                const pdfWidth = pdf.internal.pageSize.getWidth(); const pdfHeight = pdf.internal.pageSize.getHeight();
+                const margin = 20; 
+                const usablePdfWidth = pdfWidth - 2 * margin; const usablePdfHeight = pdfHeight - 2 * margin;
+                const imgPropsWidth = canvas.width; const imgPropsHeight = canvas.height;
+                const imgAspectRatio = imgPropsWidth / imgPropsHeight;
+                let finalImgWidth = usablePdfWidth; let finalImgHeight = finalImgWidth / imgAspectRatio;
+                if (finalImgHeight > usablePdfHeight) { finalImgHeight = usablePdfHeight; finalImgWidth = finalImgHeight * imgAspectRatio; }
+                const xOffset = margin + (usablePdfWidth - finalImgWidth) / 2; const yOffset = margin + (usablePdfHeight - finalImgHeight) / 2;
+                console.log("PDF Export: Adding image to PDF...");
+                pdf.addImage(imgData, 'PNG', xOffset, yOffset, finalImgWidth, finalImgHeight);
+                const dateSuffix = new Date().toISOString().slice(0,10).replace(/-/g,'');
+                const periodTextForFile = currentPeriodSpan.textContent.replace(/\s-\s/g, '_to_').replace(/,\s|\s|\//g, '_').replace(/[^a-zA-Z0-9-_]/g, '');
+                pdf.save(`schedule_${periodTextForFile}_${dateSuffix}.pdf`);
+                console.log("PDF Export: Save command issued.");
+                // alert("PDF should be downloading now."); // Alert can be annoying if download is quick
+            } catch (pdfError) {
+                console.error("PDF Export: Error during jsPDF processing or saving:", pdfError);
+                alert("Error generating PDF after capturing the image. Please check console.");
             }
-            
-            // Center the image if it's smaller than usable area
-            const xOffset = (pdfWidth - finalImgWidth) / 2;
-            const yOffset = (pdfHeight - finalImgHeight) / 2;
-
-            pdf.addImage(imgData, 'PNG', xOffset, yOffset, finalImgWidth, finalImgHeight);
-            const dateSuffix = new Date().toISOString().slice(0,10).replace(/-/g,'');
-            pdf.save(`workshop_schedule_${currentPeriodSpan.textContent.replace(/\s-\s/g, '_to_').replace(/,\s/g, '_')}_${dateSuffix}.pdf`);
-            alert("PDF export generated!");
         }).catch(err => {
-            console.error("Error exporting to PDF:", err);
-            alert("Sorry, an error occurred while exporting to PDF.");
+            console.error("PDF Export: Error during html2canvas capture:", err);
+            alert("Sorry, an error occurred while capturing chart for PDF. Please check console.");
         });
     }
 
-
     // --- INITIALIZATION FUNCTION DEFINITION ---
     function init() {
-        populateWorkerSelects();
-        populateJobTypeSelects();
+        populateWorkerSelects(); populateJobTypeSelects();
         addJobForm.addEventListener('submit', handleAddTask); 
         editJobForm.addEventListener('submit', handleEditTask); 
         deleteTaskButton.addEventListener('click', handleDeleteTask);
@@ -720,20 +668,14 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         if(prevPeriodBtn) prevPeriodBtn.addEventListener('click', showPreviousPeriod);
         if(nextPeriodBtn) nextPeriodBtn.addEventListener('click', showNextPeriod);
-        
-        // NEW Event Listeners for V1.5
         if (backupDataBtn) backupDataBtn.addEventListener('click', backupData);
         if (restoreDataBtn && restoreDataInput) {
             restoreDataBtn.addEventListener('click', () => {
-                if (restoreDataInput.files.length > 0) {
-                    restoreData({ target: { files: restoreDataInput.files } }); 
-                } else {
-                    alert("Please select a backup file first.");
-                }
+                if (restoreDataInput.files.length > 0) { restoreData({ target: { files: restoreDataInput.files } }); } 
+                else { alert("Please select a backup file first."); }
             });
         }
         if (exportToPdfBtn) exportToPdfBtn.addEventListener('click', exportScheduleToPdf);
-
         if(document.getElementById('startDate')) document.getElementById('startDate').value = formatDate(new Date()); 
         if(leaveStartDateInput) leaveStartDateInput.value = formatDate(new Date()); 
         if(leaveEndDateInput) leaveEndDateInput.value = formatDate(new Date()); 
