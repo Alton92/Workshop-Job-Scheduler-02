@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // --- DATA --- (Same as V1.4)
+    // --- DATA ---
     const workers = [ 
         { id: 1, name: "Expert Worker 1", color: "#a0c4ff" }, 
         { id: 2, name: "Expert Worker 2", color: "#a7d8de" }, 
@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
         { name: "Others", outlineColor: "#FF0000", glowColor: "rgba(255, 0, 0, 0.7)" }       
     ];
 
-    // --- ROBUST DATA LOADING --- (Same as V1.4)
+    // --- ROBUST DATA LOADING ---
     function parseTaskDates(task) {
         try {
             if (!task || typeof task.startDate === 'undefined' || typeof task.endDate === 'undefined') { return null; }
@@ -48,7 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const diffToMondayInitial = dayOfWeekInitial === 0 ? -6 : 1 - dayOfWeekInitial;
     currentDisplayDate.setDate(currentDisplayDate.getDate() + diffToMondayInitial);
 
-    // --- DOM ELEMENTS --- (Same as V1.4, including backup/restore/pdf export buttons)
+    // --- DOM ELEMENTS ---
     const ganttChartContainer = document.querySelector('.gantt-chart-container');
     const workerSelect = document.getElementById('workerSelect');
     const editWorkerSelect = document.getElementById('editWorkerSelect');
@@ -91,7 +91,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const ganttChartAreaToExport = document.getElementById('ganttChartAreaToExport');
 
 
-    // --- DRAG AND DROP STATE VARIABLES --- (Same as V1.4)
+    // --- DRAG AND DROP STATE VARIABLES --- 
     let dragMode = null; 
     let draggedTaskElement = null; let draggedTaskId = null;
     let dragStartX = 0; let dragStartY = 0; 
@@ -101,12 +101,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const resizeHandleActiveZone = 10; let currentCellWidth = 50; 
     let workerRowElements = []; let currentHoverWorkerId = null;
 
-    // --- DATE HELPER FUNCTIONS --- (Same as V1.4)
-    function formatDate(dateObj, includeYear = true) { /* ... */ }
-    function addDays(dateObj, days) { /* ... */ }
-    function getSundaysInRange(startDate, endDate) { /* ... */ }
-    async function confirmOvertimeForSundays(taskName, newSundaysList) { /* ... */ }
-    // Actual implementations
+    // --- DATE HELPER FUNCTIONS ---
     function formatDate(dateObj, includeYear = true) { 
         const d = new Date(dateObj);
         let monthVal = '' + (d.getMonth() + 1); let dayVal = '' + d.getDate(); const yearVal = d.getFullYear();
@@ -137,10 +132,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return []; 
     }
 
-    // --- GENERIC LOCAL STORAGE FUNCTIONS --- (Same as V1.4)
-    function saveData(key, data) { /* ... */ }
-    function loadData(key, dateParserFn) { /* ... */ }
-    // Actual implementations
+    // --- GENERIC LOCAL STORAGE FUNCTIONS ---
     function saveData(key, data) { localStorage.setItem(key, JSON.stringify(data));}
     function loadData(key, dateParserFn) {
         const storedData = localStorage.getItem(key);
@@ -154,41 +146,38 @@ document.addEventListener('DOMContentLoaded', () => {
         return [];
     }
     
-    // --- MODAL CONTROL FUNCTIONS --- (Refined openEditModal check)
-    function closeModal() { editTaskModal.style.display = 'none'; }
+    // --- MODAL CONTROL FUNCTIONS --- (Refined openEditModal)
+    function closeModal() { if(editTaskModal) editTaskModal.style.display = 'none'; }
     function openEditModal(taskId) {
-        // If a drag operation (move or resize) just occurred and potentially changed data,
-        // isActualDrag would have been true, and handleDragEnd would have reset it to false
-        // *after* calling renderGanttChart (if dataChanged was true).
-        // A simple tap will result in isActualDrag being false when handleDragEnd finishes.
-        if (isActualDrag) { // Check the flag that indicates if a mousemove threshold was met
+        if (isActualDrag) { // Check if a drag that involved movement just concluded
+            // isActualDrag is reset at the end of handleDragEnd AFTER potential re-render
             return; 
         }
         const task = tasks.find(t => t.id === taskId);
         if (!task) return;
-        editTaskIdInput.value = task.id; editJobNameInput.value = task.name; editWorkerSelect.value = task.workerId;
-        editJobTypeSelect.value = task.jobType || (jobTypes.length > 0 ? jobTypes[0].name : ''); 
-        editStartDateInput.value = formatDate(task.startDate); editDurationInput.value = task.duration;
-        editTaskModal.style.display = 'block';
+        if(editTaskIdInput) editTaskIdInput.value = task.id; 
+        if(editJobNameInput) editJobNameInput.value = task.name; 
+        if(editWorkerSelect) editWorkerSelect.value = task.workerId;
+        if(editJobTypeSelect) editJobTypeSelect.value = task.jobType || (jobTypes.length > 0 ? jobTypes[0].name : ''); 
+        if(editStartDateInput) editStartDateInput.value = formatDate(task.startDate); 
+        if(editDurationInput) editDurationInput.value = task.duration;
+        if(editTaskModal) editTaskModal.style.display = 'block';
     }
-    function closeLeaveModal() { editLeaveModal.style.display = 'none'; }
-    function openEditLeaveModal(leaveId) { /* ... same ... */ }
-    // Actual implementation for openEditLeaveModal
-     function openEditLeaveModal(leaveId) {
+    function closeLeaveModal() { if(editLeaveModal) editLeaveModal.style.display = 'none'; }
+    function openEditLeaveModal(leaveId) {
         const leave = leaves.find(l => l.id === leaveId); if (!leave) return;
         const worker = workers.find(w => w.id === leave.workerId);
-        editLeaveIdInput.value = leave.id; editLeaveWorkerDisplay.value = worker ? worker.name : 'Unknown Worker'; 
-        editLeaveStartDateInput.value = formatDate(leave.startDate); editLeaveEndDateInput.value = formatDate(leave.endDate);   
-        editLeaveReasonInput.value = leave.reason || '';
-        editLeaveModal.style.display = 'block';
+        if(editLeaveIdInput) editLeaveIdInput.value = leave.id; 
+        if(editLeaveWorkerDisplay) editLeaveWorkerDisplay.value = worker ? worker.name : 'Unknown Worker'; 
+        if(editLeaveStartDateInput) editLeaveStartDateInput.value = formatDate(leave.startDate); 
+        if(editLeaveEndDateInput) editLeaveEndDateInput.value = formatDate(leave.endDate);   
+        if(editLeaveReasonInput) editLeaveReasonInput.value = leave.reason || '';
+        if(editLeaveModal) editLeaveModal.style.display = 'block';
     }
 
-
-    // --- POPULATION FUNCTIONS --- (Same as V1.4)
-    function populateWorkerSelects() { /* ... */ }
-    function populateJobTypeSelects() { /* ... */ }
-    // Actual implementations
+    // --- POPULATION FUNCTIONS ---
     function populateWorkerSelects() {
+        if(!workerSelect || !editWorkerSelect || !leaveWorkerSelect) return;
         workerSelect.innerHTML = ''; editWorkerSelect.innerHTML = ''; leaveWorkerSelect.innerHTML = ''; 
         workers.forEach(worker => {
             const option = document.createElement('option'); option.value = worker.id; option.textContent = worker.name;
@@ -196,6 +185,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     function populateJobTypeSelects() {
+        if(!jobTypeSelect || !editJobTypeSelect) return;
         jobTypeSelect.innerHTML = ''; editJobTypeSelect.innerHTML = ''; 
         jobTypes.forEach(type => {
             const option = document.createElement('option'); option.value = type.name; option.textContent = type.name;
@@ -203,20 +193,16 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- Pointer Coordinate Helper --- (Same as V1.4)
-    function getPointerCoordinates(event) { /* ... */ }
-    // Actual implementation
+    // --- Pointer Coordinate Helper ---
     function getPointerCoordinates(event) {
         if (event.type.startsWith('touch')) {
             if (event.changedTouches && event.changedTouches.length > 0) { return { x: event.changedTouches[0].clientX, y: event.changedTouches[0].clientY }; }
-            return { x: event.touches[0].clientX, y: event.touches[0].clientY };
+            if (event.touches && event.touches.length > 0) { return { x: event.touches[0].clientX, y: event.touches[0].clientY }; }
+            return {x:0, y:0}; // Fallback for touch events with no coordinate data
         } else { return { x: event.clientX, y: event.clientY }; }
     }
 
-    // --- RENDERING FUNCTIONS --- (renderBarOnChart & renderGanttChart same as V1.4)
-    function renderBarOnChart(item, cellsDiv, periodStartDate, daysInPeriod, cellWidthForCalc, type) { /* ... */ }
-    function renderGanttChart() { /* ... */ }
-    // Actual implementations (copied from V1.4)
+    // --- RENDERING FUNCTIONS ---
     function renderBarOnChart(item, cellsDiv, periodStartDate, daysInPeriod, cellWidthForCalc, type) {
         const itemStartDateOriginal = new Date(item.startDate); const itemEndDateOriginal = new Date(item.endDate);   
         const itemStartDay = new Date(itemStartDateOriginal); itemStartDay.setHours(0,0,0,0); 
@@ -320,7 +306,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-
     // --- DRAG AND DROP HANDLER FUNCTIONS --- (Refined for touch/click distinction)
     function handleDragStart(event, taskItem, element) { 
         const taskId = taskItem.id;
@@ -328,24 +313,28 @@ document.addEventListener('DOMContentLoaded', () => {
         if (editTaskModal.style.display === 'block' || editLeaveModal.style.display === 'block') return;
         if (!taskItem) return;
         
-        isActualDrag = false; // Reset for current operation
+        isActualDrag = false; 
         const coords = getPointerCoordinates(event);
         const rect = element.getBoundingClientRect();
         const pointerXInElement = coords.x - rect.left;
 
         if (pointerXInElement < resizeHandleActiveZone) {
-            dragMode = 'resize-left'; document.body.style.cursor = 'ew-resize';
+            dragMode = 'resize-left'; 
         } else if (pointerXInElement > element.offsetWidth - resizeHandleActiveZone) {
-            dragMode = 'resize-right'; document.body.style.cursor = 'ew-resize';
+            dragMode = 'resize-right';
         } else {
-            dragMode = 'move'; document.body.style.cursor = 'grabbing';
+            dragMode = 'move';
         }
         
-        // Prevent default only for touchstart to allow drag scrolling prevention in handleDragging
-        // but allow default for mousedown to ensure click event fires for modal.
-        if (event.type === 'touchstart' && dragMode) { // Only if a drag mode is certain
-            event.preventDefault(); 
-        }
+        // Set body cursor based on determined dragMode AFTER mode is set
+        if (dragMode === 'move') document.body.style.cursor = 'grabbing';
+        else if (dragMode.startsWith('resize')) document.body.style.cursor = 'ew-resize';
+        
+        // Prevent default for touchstart ONLY if a drag operation is certain (to allow taps for modals)
+        // The touch-action:none on .task-bar in CSS should handle initial scroll prevention.
+        // Further preventDefault will happen in handleDragging for touchmove.
+        // if (event.type === 'touchstart' && dragMode) { event.preventDefault(); }
+
 
         draggedTaskElement = element; draggedTaskId = taskId; dragStartX = coords.x; dragStartY = coords.y;
         originalTaskLeft = element.offsetLeft; originalTaskWidth = element.offsetWidth;
@@ -360,18 +349,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function handleDragging(event) { 
         if (!dragMode || !draggedTaskElement) return;
-        
-        // Prevent default scrolling/zooming behavior during touch drag
-        if (event.type === 'touchmove') {
-            event.preventDefault(); 
-        }
-
+        if (event.type === 'touchmove') event.preventDefault(); 
         const coords = getPointerCoordinates(event);
-        const dx = coords.x - dragStartX; 
-        const dy = coords.y - dragStartY; 
-        if (Math.abs(dx) > 5 || Math.abs(dy) > 5) { // Increased threshold slightly
-            isActualDrag = true;
-        }
+        const dx = coords.x - dragStartX; const dy = coords.y - dragStartY; 
+        if (Math.abs(dx) > 5 || Math.abs(dy) > 5) isActualDrag = true;
 
         if (dragMode === 'move') {
             let newLeft = originalTaskLeft + dx; 
@@ -418,9 +399,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function handleDragEnd(event) { 
-        const currentDragModeForEnd = dragMode; // Capture before reset
+        const currentDragModeForEnd = dragMode; 
         const wasAnActualDragForEnd = isActualDrag; 
-
         workerRowElements.forEach(rowInfo => { rowInfo.nameCell.classList.remove('worker-row-drop-target'); rowInfo.cellsElement.classList.remove('worker-row-drop-target'); });
         currentHoverWorkerId = null;
         if (draggedTaskElement) { draggedTaskElement.classList.remove('dragging'); draggedTaskElement.style.cursor = 'grab'; }
@@ -429,18 +409,17 @@ document.addEventListener('DOMContentLoaded', () => {
         document.removeEventListener('mouseup', handleDragEnd); document.removeEventListener('touchend', handleDragEnd);
 
         let dataChanged = false;
-        if (currentDragModeForEnd && draggedTaskElement && draggedTaskId !== null) {
+        if (currentDragModeForEnd && draggedTaskElement && draggedTaskId !== null) { // Check draggedTaskId before use
             if (wasAnActualDragForEnd || currentDragModeForEnd.startsWith('resize-')) {
                 const taskIndex = tasks.findIndex(t => t.id === draggedTaskId);
                 if (taskIndex !== -1) {
                     const task = tasks[taskIndex];
                     const originalOvertimeSundaysForConfirmation = [...task.overtimeSundays]; 
-                    let newStartDate = new Date(originalTaskStartDate); 
-                    let newDuration = originalTaskDuration;       
+                    let newStartDate = new Date(originalTaskStartDate); let newDuration = originalTaskDuration;       
                     let newWorkerId = originalWorkerId; 
                     const finalLeftPixels = parseFloat(draggedTaskElement.style.left);
                     const finalWidthPixels = parseFloat(draggedTaskElement.style.width);
-                    const pointerCoords = getPointerCoordinates(event.type.startsWith('touch') && event.changedTouches && event.changedTouches.length > 0 ? event.changedTouches[0] : event);
+                    const pointerCoords = getPointerCoordinates(event);
 
                     if (currentDragModeForEnd === 'move') {
                         for (const rowInfo of workerRowElements) {
@@ -481,10 +460,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
         }
-        
-        dragMode = null; draggedTaskElement = null; draggedTaskId = null; 
-        isActualDrag = false; // Reset this crucial flag AFTER all checks and potential data changes.
-        
+        dragMode = null; draggedTaskElement = null; draggedTaskId = null; isActualDrag = false; 
         if (dataChanged) renderGanttChart(); 
     }
 
@@ -497,7 +473,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function handleDeleteLeave() { /* ... V1.4 version ... */ }
     function showPreviousPeriod() { /* ... V1.4 version ... */ }
     function showNextPeriod() { /* ... V1.4 version ... */ }
-    // Actual implementations (copied from V1.4)
+    // Actual implementations
     async function handleAddTask(event) {
         event.preventDefault();
         const jobName = document.getElementById('jobName').value; const workerId = parseInt(workerSelect.value);
@@ -576,6 +552,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     // --- Data Backup/Restore & PDF Export Functions (V1.5) ---
+    function backupData() { /* ... Same as V1.5 ... */ }
+    function restoreData(event) { /* ... Same as V1.5 ... */ }
+    function exportScheduleToPdf() { /* ... Same as V1.5 with debugging logs ... */ }
+    // Actual implementations for Data Management (copied from V1.5)
     function backupData() {
         const dataToBackup = { version: "1.5.1", timestamp: new Date().toISOString(), tasks: tasks, leaves: leaves };
         const jsonString = JSON.stringify(dataToBackup, null, 2);
@@ -600,8 +580,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     tasks = importedData.tasks.map(task => parseTaskDates(task)).filter(t => t !== null);
                     leaves = importedData.leaves.map(leave => parseLeaveDates(leave)).filter(l => l !== null);
                     currentDisplayDate = new Date(); currentDisplayDate.setHours(0,0,0,0); 
-                    const dayOfWeek = currentDisplayDate.getDay();
-                    const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+                    const dayOfWeek = currentDisplayDate.getDay(); const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
                     currentDisplayDate.setDate(currentDisplayDate.getDate() + diffToMonday);
                     saveData('workshopTasks', tasks); saveData('workshopLeaves', leaves); 
                     renderGanttChart(); alert("Data restored successfully!");
@@ -624,7 +603,7 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 const imgData = canvas.toDataURL('image/png', 0.9); 
                 console.log("PDF Export: Image data URL created (length approx):", imgData.length / 1024, "KB");
-                const { jsPDF } = window.jspdf;
+                const { jsPDF } = window.jspdf; // Ensure jsPDF is correctly accessed
                 const pdf = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
                 const pdfWidth = pdf.internal.pageSize.getWidth(); const pdfHeight = pdf.internal.pageSize.getHeight();
                 const margin = 20; 
@@ -640,7 +619,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 const periodTextForFile = currentPeriodSpan.textContent.replace(/\s-\s/g, '_to_').replace(/,\s|\s|\//g, '_').replace(/[^a-zA-Z0-9-_]/g, '');
                 pdf.save(`schedule_${periodTextForFile}_${dateSuffix}.pdf`);
                 console.log("PDF Export: Save command issued.");
-                // alert("PDF should be downloading now."); // Alert can be annoying if download is quick
             } catch (pdfError) {
                 console.error("PDF Export: Error during jsPDF processing or saving:", pdfError);
                 alert("Error generating PDF after capturing the image. Please check console.");
@@ -650,6 +628,7 @@ document.addEventListener('DOMContentLoaded', () => {
             alert("Sorry, an error occurred while capturing chart for PDF. Please check console.");
         });
     }
+
 
     // --- INITIALIZATION FUNCTION DEFINITION ---
     function init() {
