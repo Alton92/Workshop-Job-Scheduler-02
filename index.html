@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Workshop Job Scheduler - KILANG BESI HIAP SENG (V1.5)</title>
+    <title>Workshop Job Scheduler - KILANG BESI HIAP SENG (V1.6)</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" integrity="sha512-BNaRQnYJYiPSqHHDb58B0yaPfCu+Wgds8Gp/gU33kqBtgNS4tSPHuGibyoeqMV/TJlSKda6FXlcxtT ألله يجعلها في ميزان حسناتك والله يرحم والديك ويغفر لهم ويسكنهم فسيح جناته يارب العالمينhd19zUrg4AQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha512-qZvrmS2ekKPF2mSznTQsxqPgnpkI4FSoxlabelMadh4iHczdU1OscB_wKOCSq LEN ٣JkS KorLhz/q納<seg_67> PassProductIntent="ONAWAX Collaborations " crossorigin="anonymous" referrerpolicy="no-referrer"></script>
@@ -42,47 +42,20 @@
         <div class="controls">
             <h2>Add New Job</h2>
             <form id="addJobForm">
-                <div>
-                    <label for="jobName">Job Name:</label>
-                    <input type="text" id="jobName" required>
-                </div>
-                <div>
-                    <label for="workerSelect">Assign to Worker:</label>
-                    <select id="workerSelect" required></select>
-                </div>
-                <div>
-                    <label for="jobTypeSelect">Job Type:</label>
-                    <select id="jobTypeSelect" required></select>
-                </div>
-                <div>
-                    <label for="startDate">Start Date:</label>
-                    <input type="date" id="startDate" required>
-                </div>
-                <div>
-                    <label for="duration">Duration (days):</label>
-                    <input type="number" id="duration" min="1" value="1" required>
-                </div>
+                <div><label for="jobName">Job Name:</label><input type="text" id="jobName" required></div>
+                <div><label for="workerSelect">Assign to Worker:</label><select id="workerSelect" required></select></div>
+                <div><label for="jobTypeSelect">Job Type:</label><select id="jobTypeSelect" required></select></div>
+                <div><label for="startDate">Start Date:</label><input type="date" id="startDate" required></div>
+                <div><label for="duration">Duration (days):</label><input type="number" id="duration" min="1" value="1" required></div>
                 <button type="submit">Add Job</button>
             </form>
 
             <h2 style="margin-top: 30px;">Add Worker Leave</h2>
             <form id="addLeaveForm">
-                <div>
-                    <label for="leaveWorkerSelect">Worker:</label>
-                    <select id="leaveWorkerSelect" required></select>
-                </div>
-                <div>
-                    <label for="leaveStartDate">Leave Start Date:</label>
-                    <input type="date" id="leaveStartDate" required>
-                </div>
-                <div>
-                    <label for="leaveEndDate">Leave End Date:</label>
-                    <input type="date" id="leaveEndDate" required>
-                </div>
-                <div>
-                    <label for="leaveReason">Reason (Optional):</label>
-                    <input type="text" id="leaveReason">
-                </div>
+                <div><label for="leaveWorkerSelect">Worker:</label><select id="leaveWorkerSelect" required></select></div>
+                <div><label for="leaveStartDate">Leave Start Date:</label><input type="date" id="leaveStartDate" required></div>
+                <div><label for="leaveEndDate">Leave End Date:</label><input type="date" id="leaveEndDate" required></div>
+                <div><label for="leaveReason">Reason (Optional):</label><input type="text" id="leaveReason"></div>
                 <button type="submit">Add Leave</button>
             </form>
 
